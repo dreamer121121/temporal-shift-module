@@ -204,6 +204,7 @@ def main():
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, log_training, tf_writer)
+        break
 
         # evaluate on validation set
         if (epoch + 1) % args.eval_freq == 0 or epoch == args.epochs - 1:
@@ -254,6 +255,7 @@ def train(train_loader, model, criterion, optimizer, epoch, log, tf_writer):
 
         # compute output
         output = model(input_var)
+        break
         loss = criterion(output, target_var)
 
         # measure accuracy and record loss
