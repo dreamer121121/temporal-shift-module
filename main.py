@@ -28,8 +28,20 @@ def main():
     global args, best_prec1
     args = parser.parse_args()
 
-    num_class, args.train_list, args.val_list, args.root_path, prefix = dataset_config.return_dataset(args.dataset,
-                                                                                                      args.modality)
+    prefix = 'frame{:06}.jpg'
+    if args.dataset == 'ucf101':
+        num_class = 101
+    elif args.dataset == 'hmdb51':
+        num_class = 51
+    elif args.dataset == 'kinetics':
+        num_class = 400
+    else:
+        raise ValueError('Unknown dataset '+args.dataset)
+
+
+    #
+    # num_class, args.train_list, args.val_list, args.root_path, prefix = dataset_config.return_dataset(args.dataset,
+    #                                                                                                   args.modality)
     full_arch_name = args.arch
     if args.shift:
         full_arch_name += '_shift{}_{}'.format(args.shift_div, args.shift_place)

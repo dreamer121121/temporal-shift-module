@@ -105,7 +105,7 @@ class TSN(nn.Module):
             if self.is_shift:
                 print('Adding temporal shift...')
                 from ops.temporal_shift import make_temporal_shift
-                make_temporal_shift(self.base_model, self.num_segments,
+                make_temporal_shift(self.base_model, self.num_segments, #重点！
                                     n_div=self.shift_div, place=self.shift_place, temporal_pool=self.temporal_pool)
 
             if self.non_local:
