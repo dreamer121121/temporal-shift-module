@@ -25,21 +25,24 @@ class TemporalShift(nn.Module):
 
     @staticmethod
     def shift(x, n_segment, fold_div=3, inplace=False):
-        nt, c, h, w = x.size() #x==>batch_size*n_segment(3)可参考tsn代码。
-        n_batch = nt // n_segment
+        nt, c, h, w = x.size() #以layer1的第一个添加temporalshift的block为例：x==>batch_size(16)*t=48,channel=64,h=56,w=56.
+        n_batch = nt // n_segment #当前的每一个batch中包含的视频数量为16，一段视频为一个sample.
         x = x.view(n_batch, n_segment, c, h, w) #将x,reshape成batch_size,n_segment,channel,h,w
 
-        fold = c // fold_div
+        fold = c // fold_div #以Layer1的第一个添加TSM的block为例，fold = 64/8 = 8
         if inplace:
             # Due to some out of order error when performing parallel computing. 
             # May need to write a CUDA kernel.
             raise NotImplementedError  
             # out = InplaceShift.apply(x, fold)
         else:
+            '''
+            temporal shift核心代码,重点理解此处，TSM即可完全理解
+            '''
             out = torch.zeros_like(x)
-            out[:, :-1, :fold] = x[:, 1:, :fold]  # shift left
-            out[:, 1:, fold: 2 * fold] = x[:, :-1, fold: 2 * fold]  # shift right
-            out[:, :, 2 * fold:] = x[:, :, 2 * fold:]  # not shift
+            out[:, :-1, :fold] = x[:, 1:, :fold]  # shift left 前8个通道从t3-->t1
+            out[:, 1:, fold: 2 * fold] = x[:, :-1, fold: 2 * fold]  # shift right #8-16通道从t1-->t3
+            out[:, :, 2 * fold:] = x[:, :, 2 * fold:]  # not shift #16通道以后的部分不再滑动直接复制
 
         return out.view(nt, c, h, w)
 
@@ -128,10 +131,10 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
                 print('=> Processing stage with {} blocks residual'.format(len(blocks)))
                 for i, b in enumerate(blocks):
                     if i % n_round == 0:
-                        blocks[i].conv1 = TemporalShift(b.conv1, n_segment=this_segment, n_div=n_div)
+                        blocks[i].conv1 = TemporalShift(b.conv1, n_segment=this_segment, n_div=n_div) #取出一个block，在第一个卷积之前加入
                 return nn.Sequential(*blocks)
 
-            net.layer1 = make_block_temporal(net.layer1, n_segment_list[0])
+            net.layer1 = make_block_temporal(net.layer1, n_segment_list[0]) #resnet101中layer1-4分别有（3,4,23,3）个block.
             net.layer2 = make_block_temporal(net.layer2, n_segment_list[1])
             net.layer3 = make_block_temporal(net.layer3, n_segment_list[2])
             net.layer4 = make_block_temporal(net.layer4, n_segment_list[3])
