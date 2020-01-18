@@ -27,7 +27,7 @@ class TemporalShift(nn.Module):
     def shift(x, n_segment, fold_div=3, inplace=False):
         nt, c, h, w = x.size() #以layer1的第一个添加temporalshift的block为例：x==>batch_size(16)*t=48,channel=64,h=56,w=56.
         n_batch = nt // n_segment #当前的每一个batch中包含的视频数量为16，一段视频为一个sample.
-        x = x.view(n_batch, n_segment, c, h, w) #将x,reshape成batch_size,n_segment,channel,h,w
+        x = x.view(n_batch, n_segment, c, h, w) #将x,reshape成batch_size,n_segment,channel,h,w，(16，3,64,56,56)
 
         fold = c // fold_div #以Layer1的第一个添加TSM的block为例，fold = 64/8 = 8
         if inplace:
